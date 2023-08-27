@@ -1,3 +1,5 @@
+#pragma once
+
 using std::string;
 
 class tas_vars {
