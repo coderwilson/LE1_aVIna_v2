@@ -12,4 +12,7 @@
     <ClInclude Include="config\state.h" />
     <ClInclude Include="controls\xbox.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="LE1_aVIna.cpp" />
+  </ItemGroup>
 </Project>
