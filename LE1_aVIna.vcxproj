@@ -157,7 +157,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\umadb\Documents\reue4ss\new\LE1_aVIna_v2\controls\ViGEmClient\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
       <AdditionalDependencies>XInput.lib;setupapi.lib;ViGEmClient.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
