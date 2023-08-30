@@ -10,6 +10,17 @@
 int to_ash()
 {
     std::cout << "Hello Ash!\n";
+    xbox_class xbox;
+    xbox.connect();
+    xbox.test();
+    xbox.grenade();
+    xbox.grenade();
+    xbox.grenade();
+    xbox.grenade();
+    xbox.grenade();
+    xbox.grenade();
+    xbox.grenade();
+    xbox.grenade();
     std::cout << "TEST2\n";
     return 0;
 }

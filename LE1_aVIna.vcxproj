@@ -30,11 +30,6 @@
     <ClInclude Include="config\state.h" />
     <ClInclude Include="controls\xbox.h" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="controls\ViGEmClient\src\ViGEmClient.vcxproj">
-      <Project>{7db06674-1f4f-464b-8e1c-172e9587f9dc}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
