@@ -8,17 +8,37 @@
 #include <iostream>
 #include "area/eden_prime.h"
 #include "config/state.h"
+#include "memory/core.h"
 using namespace std;
 using std::string;
 
 
 int main()
 {
+    memory_class memory;
+    // Opening statements as appropriate
+    cout << "aVIna Start!\n";
+
     tas_vars main_vars;
     try {
         // Initialize logging
         // Initialize controller
         // Connect to memory
+        std::cout << "Initializing memory\n";
+        int wait_counter = 0;
+        while (memory.connect() != 0) {
+            std::cout << "Memory did not initialize. Please make sure the game is running. - ";
+            std::cout << wait_counter << std::endl;
+            wait_counter += 1;
+            Sleep(1000);
+        }
+        std::cout << "Memory now connected.\n";
+        for (int i = 0; i < 10; i++) {
+            memory.frame_pos();
+            Sleep(500);
+        }
+        Sleep(1000);
+
         // Connect to config
         
         main_vars.gamestate = 10;
@@ -29,10 +49,6 @@ int main()
     catch (string e) {
         cout << "Initialization error: " << e << "\n";
     }
-
-    // Opening statements as appropriate
-    cout << "Hello World!\n";
-    cout << "TEST\n";
 
     // Run TAS based on game state. Initially from configs, updating as the TAS completes each section.
     while (main_vars.gamestate != 999) {
@@ -69,6 +85,7 @@ int main()
             main_vars.gamestate = 999;
         }
     }
+    memory.disconnect();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

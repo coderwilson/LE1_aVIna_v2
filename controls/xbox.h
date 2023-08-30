@@ -19,6 +19,7 @@ public:
     XINPUT_STATE state;
 
     int connect() {
+        std::cout << "\nConnecting Virtual Xbox controller\n";
         client = vigem_alloc();
         if (client == nullptr)
         {
@@ -54,7 +55,7 @@ public:
             return -1;
         }
         XInputGetState(0, &state);
-        std::cout << "Client has now connected.";
+        std::cout << "Virtual X-box controller has now connected.";
         return 0;
     }
     int neutral() {
@@ -135,7 +136,6 @@ public:
         //vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
         //std::cout << "Guide button";
         //std::cout << std::endl;
-        */
         neutral();
         Sleep(1000);
         std::cout << "A";
@@ -174,6 +174,7 @@ public:
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
         std::cout << "Right Trigger";
         std::cout << std::endl;
+        */
         Sleep(1000);
         state.Gamepad.bRightTrigger = 0x0;
         state.Gamepad.sThumbLX = 32767;
@@ -184,12 +185,7 @@ public:
         std::cout << "Stick movement 1";
         std::cout << std::endl;
         Sleep(500);
-        state.Gamepad.sThumbLX = 0;
-        state.Gamepad.sThumbLY = 0;
-        state.Gamepad.sThumbRX = 0;
-        state.Gamepad.sThumbRY = 0;
-        vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        std::cout << std::endl;
+        neutral();
         Sleep(500);
         state.Gamepad.sThumbLX = -32767;
         state.Gamepad.sThumbLY = -32767;
@@ -199,12 +195,7 @@ public:
         std::cout << "Stick movement 2";
         std::cout << std::endl;
         Sleep(500);
-        state.Gamepad.sThumbLX = 0;
-        state.Gamepad.sThumbLY = 0;
-        state.Gamepad.sThumbRX = 0;
-        state.Gamepad.sThumbRY = 0;
-        vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        std::cout << std::endl;
+        neutral();
         Sleep(500);
         state.Gamepad.sThumbLX = -32767;
         state.Gamepad.sThumbLY = 32767;
@@ -214,12 +205,7 @@ public:
         std::cout << "Stick movement 3";
         std::cout << std::endl;
         Sleep(500);
-        state.Gamepad.sThumbLX = 0;
-        state.Gamepad.sThumbLY = 0;
-        state.Gamepad.sThumbRX = 0;
-        state.Gamepad.sThumbRY = 0;
-        vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        std::cout << std::endl;
+        neutral();
         Sleep(500);
         state.Gamepad.sThumbLX = 32767;
         state.Gamepad.sThumbLY = -32767;
@@ -229,12 +215,7 @@ public:
         std::cout << "Stick movement 4";
         std::cout << std::endl;
         Sleep(500);
-        state.Gamepad.sThumbLX = 0;
-        state.Gamepad.sThumbLY = 0;
-        state.Gamepad.sThumbRX = 0;
-        state.Gamepad.sThumbRY = 0;
-        vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        std::cout << std::endl;
+        neutral();
         std::cout << "Test complete.";
         Sleep(2000);
     }
