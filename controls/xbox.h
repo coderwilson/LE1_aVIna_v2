@@ -1,9 +1,8 @@
 #pragma once
 #define WIN32_LEAN_AND_MEAN
+#include "../config/global_objects.h"
 #include <windows.h>
-
 #include <Xinput.h>
-
 #include <ViGEm/Client.h>
 #pragma comment(lib, "setupapi.lib")
 using std::string;
@@ -41,10 +40,9 @@ public:
         }
         else
         {
-            std::cout << "Retval:\n";
-            std::cout << retval << std::endl;
+            std::cout << "Xbox Connection: " << retval << std::endl;
         }
-        Sleep(100);
+        memory.wait_frames(1);
 
         pad = vigem_target_x360_alloc();
         pir = vigem_target_add(client, pad);
@@ -55,7 +53,7 @@ public:
             return -1;
         }
         XInputGetState(0, &state);
-        std::cout << "Virtual X-box controller has now connected.";
+        std::cout << "Virtual X-box controller has now connected.\n";
         return 0;
     }
     int neutral() {
@@ -67,13 +65,14 @@ public:
         state.Gamepad.bLeftTrigger = 0;
         state.Gamepad.bRightTrigger = 0;
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        Sleep(100);
+        memory.wait_frames(1);
         return 0;
     }
     int disconnect() {
         vigem_target_remove(client, pad);
         vigem_target_free(pad);
         std::cout << "Client disconnect complete.";
+        return 0;
     }
 
     void test() {
@@ -220,54 +219,54 @@ public:
         Sleep(2000);
     }
 
-    void a() {
+    void tap_a() {
         state.Gamepad.wButtons = 0x1000;
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        Sleep(100);
+        memory.wait_frames(1);
         neutral();
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        Sleep(100);
+        memory.wait_frames(1);
     }
-    void b() {
+    void tap_b() {
         state.Gamepad.wButtons = 0x2000;
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        Sleep(100);
+        memory.wait_frames(1);
         neutral();
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        Sleep(100);
+        memory.wait_frames(1);
     }
-    void x() {
+    void tap_x() {
         state.Gamepad.wButtons = 0x4000;
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        Sleep(100);
+        memory.wait_frames(1);
         neutral();
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        Sleep(100);
+        memory.wait_frames(1);
     }
-    void y() {
+    void tap_y() {
         state.Gamepad.wButtons = 0x8000;
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        Sleep(100);
+        memory.wait_frames(1);
         neutral();
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
-        Sleep(100);
+        memory.wait_frames(1);
     }
-    void set_movement(int x, int y) {
-        // Expectation is that x and y are from -100 to 100, representing the
+    void set_movement(float x, float y) {
+        // Expectation is that x and y are from -1 to 1, representing the
         // percentage of stick push in a given direction.
         // Example, fully up and right would be 1, 1.
-        int x_val = (32767 * x) / 100;
-        int y_val = (32767 * y) / 100;
+        int x_val = (32767 * x);
+        int y_val = (32767 * y);
         state.Gamepad.sThumbLX = x_val;
         state.Gamepad.sThumbLY = y_val;
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
     }
-    void set_aim(int x, int y) {
-        // Expectation is that x and y are from -100 to 100, representing the
+    void set_aim(float x, float y) {
+        // Expectation is that x and y are from -1 to 1, representing the
         // percentage of stick push in a given direction.
         // Example, fully up and right would be 1, 1.
-        int x_val = (32767 * x) / 100;
-        int y_val = (32767 * y) / 100;
+        int x_val = (32767 * x);
+        int y_val = (32767 * y);
         state.Gamepad.sThumbRX = x_val;
         state.Gamepad.sThumbRY = y_val;
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
@@ -281,14 +280,32 @@ public:
         vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
     }
     void run() {
-        state.Gamepad.wButtons = 0x1000;
-        vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
+        // std::cout << (state.Gamepad.wButtons & (1 << 12)) << std::endl;
+        if ((state.Gamepad.wButtons & (1 << 12)) == 0) {
+            std::cout << "Running\n";
+            state.Gamepad.wButtons += 0x1000;
+            vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
+        }
     }
     void walk() {
-        neutral();
-        vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
+        // std::cout << (state.Gamepad.wButtons & (1 << 12)) << std::endl;
+        if ((state.Gamepad.wButtons & (1 << 12)) == 0x1000) {
+            std::cout << "Walking\n";
+            state.Gamepad.wButtons -= 0x1000;
+            vigem_target_x360_update(client, pad, *reinterpret_cast<XUSB_REPORT*>(&state.Gamepad));
+        }
     }
     void grenade() {
-        x();
+        tap_x();
+    }
+    void dialog(int alignment = 0, int hemisphere = 1) {
+        // alignment 1 is up, 0 is neutral, -1 is down. AKA for paragon/renegade.
+        // hemisphere 1 for right, 0 or -1 for left.
+        int x = 1;
+        if (hemisphere != 1) x = -1;
+        set_movement(x, alignment);
+        tap_a();
+        tap_x();
+
     }
 };

@@ -1,49 +1,36 @@
 /********************************************************************************************
-* 
+* Need to fill something in here about the project.
 * 
 * 
 * 
 * 
 ********************************************************************************************/
+#pragma once
 #include <iostream>
-#include "area/eden_prime.h"
-#include "config/state.h"
-#include "memory/core.h"
+#include "config/global_objects.h"
 using namespace std;
 using std::string;
+
+// Area-specific includes
+#include "area/eden_prime.h"
 
 
 int main()
 {
-    memory_class memory;
     // Opening statements as appropriate
     cout << "aVIna Start!\n";
-
-    tas_vars main_vars;
     try {
-        // Initialize logging
-        // Initialize controller
+        // Initialize logging??
         // Connect to memory
-        std::cout << "Initializing memory\n";
-        int wait_counter = 0;
-        while (memory.connect() != 0) {
-            std::cout << "Memory did not initialize. Please make sure the game is running. - ";
-            std::cout << wait_counter << std::endl;
-            wait_counter += 1;
-            Sleep(1000);
-        }
-        std::cout << "Memory now connected.\n";
-        for (int i = 0; i < 10; i++) {
-            memory.frame_pos();
-            Sleep(500);
-        }
-        Sleep(1000);
+        memory_start();
+
+        // Initialize controller
+        xbox.connect();
 
         // Connect to config
-        
         main_vars.gamestate = 10;
         main_vars.zone_progress = 0;
-        cout << "Check gamestate: " << main_vars.gamestate << "\n";
+        cout << "Check gamestate: " << std::dec << main_vars.gamestate << "\n";
 
     }
     catch (string e) {
@@ -53,19 +40,26 @@ int main()
     // Run TAS based on game state. Initially from configs, updating as the TAS completes each section.
     while (main_vars.gamestate != 999) {
         try {
+            cout << "Gamestate ID: " << main_vars.gamestate << " | " << main_vars.gamestate_name() << std::endl;
             switch (main_vars.gamestate) {
                 case 5:
-                    cout << "Section not yet programmed." << main_vars.gamestate_name() << "\n";
-                    cout << "Ready for Eden Prime.";
+
                     main_vars.gamestate = 10;
                     break;
                 case 10:
                     eden_prime_main();
-                    cout << "End of Eden Prime section.";
                     main_vars.gamestate = 999;
                     break;
+                case 15:
+                    cout << "Section not yet programmed." << main_vars.gamestate_name() << std::endl;
+                    main_vars.gamestate = 10;
+                    break;
                 case 20:
-                    cout << "Section not yet programmed." << main_vars.gamestate_name() << "\n";
+                    cout << "Section not yet programmed." << main_vars.gamestate_name() << std::endl;
+                    main_vars.gamestate = 10;
+                    break;
+                case 30:
+                    cout << "Section not yet programmed." << main_vars.gamestate_name() << std::endl;
                     main_vars.gamestate = 10;
                     break;
                 default:
@@ -85,7 +79,22 @@ int main()
             main_vars.gamestate = 999;
         }
     }
-    memory.disconnect();
+
+    // Wrap-up all objects
+    // Disconnect controller gracefully.
+    std::cout << "\nDisconnecting Xbox controller.\n";
+    xbox.disconnect();
+    std::cout << "Xbox disconnected.\n";
+
+    // Disconnect memory
+    std::cout << "\nDisconnecting from memory.\n";
+    for (int i = 0; i < 5; i++) {
+        std::cout << std::dec << memory.frame_pos() << std::endl;
+        Sleep(500);
+
+    }
+    memory_end();
+    std::cout << "Memory disconnected.\n";
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
