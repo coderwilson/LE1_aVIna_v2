@@ -1,15 +1,20 @@
+#pragma once
 #include <iostream>
 #include <windows.h>
 #include <tlhelp32.h>
 #include <string>
 #include <psapi.h>
+#include <iomanip>
 
 class memory_class {
 private:
+    // For some reason, the two different places this is used need it in different string types.
     std::wstring exeName = L"MassEffect1.exe";
+    wchar_t* exeName2 = L"MassEffect1.exe";
+
     DWORD process_id;
     HANDLE processHandle;
-    HANDLE base_addr;
+    unsigned long long int base_addr;
 
     DWORD GetProcessIdFromExeName(const std::wstring& exeName) {
         PROCESSENTRY32 processEntry;
@@ -58,7 +63,7 @@ private:
                     std::wstring wstrModName = szModName;
                     //you will need to change this to the name of the exe of the foreign process
                     std::wstring wstrModContain = exeName;
-                    if (wstrModName.find(wstrModContain) != string::npos)
+                    if (wstrModName.find(wstrModContain) != std::string::npos)
                     {
                         CloseHandle(pHandle); // Check this later, maybe should be removed.
                         return hMods[i];
@@ -67,6 +72,39 @@ private:
             }
         }
         return nullptr;
+    }
+    unsigned long long int GetModuleBase() {
+        const wchar_t* ModuleName = exeName2;
+        DWORD ProcessId = process_id;
+        // This structure contains lots of goodies about a module
+        MODULEENTRY32 ModuleEntry = { 0 };
+        // Grab a snapshot of all the modules in the specified process
+        HANDLE SnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, ProcessId);
+
+        if (!SnapShot)
+            return NULL;
+
+        // You have to initialize the size, otherwise it will not work
+        ModuleEntry.dwSize = sizeof(ModuleEntry);
+
+        // Get the first module in the process
+        if (!Module32First(SnapShot, &ModuleEntry))
+            return NULL;
+
+        do {
+            // Check if the module name matches the one we're looking for
+            if (!wcscmp(ModuleEntry.szModule, ModuleName)) {
+                // If it does, close the snapshot handle and return the base address
+                CloseHandle(SnapShot);
+                std::cout << "\n|| " << std::hex << (unsigned long long int)ModuleEntry.modBaseAddr << " ||\n";
+                return (unsigned long long int)ModuleEntry.modBaseAddr;
+            }
+            // Grab the next module in the snapshot
+        } while (Module32Next(SnapShot, &ModuleEntry));
+
+        // We couldn't find the specified module, so return NULL
+        CloseHandle(SnapShot);
+        return NULL;
     }
 
 public:
@@ -82,36 +120,27 @@ public:
         HMODULE temp_module = find_module(processHandle);
         MODULEINFO mi;
         GetModuleInformation(processHandle, temp_module, &mi, sizeof(mi));
-        base_addr = (HANDLE)mi.lpBaseOfDll;
-        /*
-        unsigned long long int base_addr_temp = (unsigned long long int)&processHandle;
-        LPVOID buffer;
-        SIZE_T len;
-        ReadProcessMemory(processHandle, &processHandle, &buffer, 8, &len);
-        std::cout << "Module base address: " << std::hex << buffer << std::endl;
-        // base_addr = (unsigned long long int) & processHandle;
-        HANDLE Process_Value = read_bytes(processHandle);
-        base_addr = 0x7ff7d87c0000;
-        */
+        base_addr = GetModuleBase();
         std::cout << "Module base address: " << std::hex << &base_addr << std::endl;
         Sleep(2000);
         return 0;
     }
 
-    HANDLE read_bytes(HANDLE base, int offset=0, int bytes=4) {
-        LPVOID buffer;
+    unsigned long long int read_bytes(unsigned long long int value, int bytes=4) {
+        unsigned long long int buffer;
         SIZE_T len = 0;
-        int value = (int) base + offset;
 
-        ReadProcessMemory(base, &value, &buffer, bytes, &len);
-        return (HANDLE) buffer;
+        ReadProcessMemory(processHandle, (void*)value, &buffer, bytes, &len);
+        return buffer;
     }
-    unsigned long long int follow_pointer(HANDLE base) {
-        LPVOID buffer;
-        SIZE_T len = 0;
-
-        ReadProcessMemory(base, &base, &buffer, 8, &len);
-        return (unsigned long long int) buffer;
+    float read_float(unsigned long long int value) {
+        unsigned long long int x = read_bytes(value, 4);
+        //std::cout << std::setprecision(4) << "Raw Float: " << x << std::endl;
+        float f;
+        *(__int64*)&f = x;
+        // memcpy(&f, (const void*)x, 4);
+        // std::cout << std::setprecision(4) << "x: " << x << " | f: " << f << std::endl;
+        return f;
     }
     int disconnect() {
         try {
@@ -124,45 +153,38 @@ public:
         }
     }
     int frame_pos() {
-        int frames = (int)read_bytes((HANDLE) &base_addr, 0x16C88A8);
-        std::cout << frames << std::endl;
+        unsigned long long int frame_addr = base_addr + 0x16C88A8;
+        int frames = (int)read_bytes(frame_addr);
         return frames;
     }
-
+    void wait_frames(int wait_amount) {
+        int end_frame = frame_pos() + wait_amount;
+        while (frame_pos() < end_frame) {}
+        return;
+    }
+    float* shep_coords() {
+        float retval[3];
+        unsigned long long int key = base_addr + 0x1782300;
+        unsigned long long int ptr1 = read_bytes(key, 8);
+        unsigned long long int ptr2 = read_bytes(ptr1 + 0x0, 8);
+        unsigned long long int ptr3 = read_bytes(ptr2 + 0x40, 8);
+        retval[0] = read_float(ptr3 + 0x108);
+        retval[1] = read_float(ptr3 + 0x10c);
+        retval[2] = read_float(ptr3 + 0x110);
+        return retval;
+    }
+    float* cam_coords() {
+        float retval[6];  // x, y, z, north, east, vertical.
+        retval[0] = read_float(base_addr + 0x1782260);
+        retval[1] = read_float(base_addr + 0x1782264);
+        retval[2] = read_float(base_addr + 0x1782268);
+        retval[3] = read_float(base_addr + 0x1649898);
+        retval[4] = read_float(base_addr + 0x16498a0);
+        retval[5] = read_float(base_addr + 0x164989C);
+        return retval;
+    }
+    bool user_control() {
+        unsigned long long int key = base_addr + 0x167EE30;
+        return (read_bytes(key, 8) == 7);
+    }
 };
-/*
-int main() {
-
-
-    uintptr_t baseAddress = 0x1000000; // Replace with the base address of the data
-    size_t offsetForInt = 0x1234;      // Replace with the offset for int
-    size_t offsetForFloat = 0x5678;    // Replace with the offset for float
-    size_t offsetForLong = 0x9ABC;     // Replace with the offset for long
-    size_t offsetForString = 0xCDEF;   // Replace with the offset for string
-
-    int intValue = 0;
-    float floatValue = 0.0f;
-    long longValue = 0;
-    std::wstring stringValue;
-
-    // Read int value
-    if (ReadDataFromProcess(processHandle, baseAddress, offsetForInt, intValue)) {
-        std::cout << "Read int value: " << intValue << std::endl;
-    }
-
-    // Read float value
-    if (ReadDataFromProcess(processHandle, baseAddress, offsetForFloat, floatValue)) {
-        std::cout << "Read float value: " << floatValue << std::endl;
-    }
-
-    // Read long value
-    if (ReadDataFromProcess(processHandle, baseAddress, offsetForLong, longValue)) {
-        std::cout << "Read long value: " << longValue << std::endl;
-    }
-
-    // Read string value
-    stringValue = ReadWStringFromProcess(processHandle, baseAddress + offsetForString);
-    std::wcout << L"Read string value: " << stringValue << std::endl;
-
-}
-*/
