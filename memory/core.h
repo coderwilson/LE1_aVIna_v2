@@ -5,6 +5,7 @@
 #include <string>
 #include <psapi.h>
 #include <iomanip>
+#include "LE1-ASI-Plugins-main/LE1-SDK/SdkHeaders.h"
 
 class memory_class {
 private:
@@ -122,7 +123,42 @@ public:
         GetModuleInformation(processHandle, temp_module, &mi, sizeof(mi));
         base_addr = GetModuleBase();
         std::cout << "Module base address: " << std::hex << &base_addr << std::endl;
-        Sleep(2000);
+        std::cout << "Next to connect to SdkHeaders\n";
+        Sleep(500);
+        SDKInitializer::Instance();
+        /*
+        auto names = SDKInitializer::Instance()->GetBioNamePools();
+        std::cout << "Names initialized: " << typeid(names).name() << std::endl;
+        auto objects = SDKInitializer::Instance()->GetObjects();
+        std::cout << "Objects initialized: " << objects->Count  << " | " << typeid(objects).name() << std::endl;
+        std::cout << "SdkHeaders success: \n";
+        
+        for (int i = 0; i < objects->Count; i++)
+        {
+            auto obj = objects->Data[i];
+            std::cout << obj->GetFullName() << std::endl;
+            if (obj && obj->Outer)
+            {
+                // Must not be null and must have an outer (otherwise it's already an object at the root of the hierarchy, which should already be rooted... in theory...)
+                UObject* outerMost = obj;
+                while (outerMost->Outer != nullptr)
+                {
+                    outerMost = outerMost->Outer; // Go to it's nullptr
+                }
+                if (outerMost == package)
+                {
+                    // It's a child of this package!
+                    //writeln(L"Rooting startup package object %hs in package %hs", obj->GetFullName(), package->Name.GetName());
+                    //RootObject(obj);
+                    
+                }
+            }
+        }
+        */
+        //int hp_test = objects->Health;
+        //std::cout << hp_test;
+        
+        Sleep(5000);
         return 0;
     }
 
@@ -162,6 +198,17 @@ public:
         while (frame_pos() < end_frame) {}
         return;
     }
+    ABioPawn* connect_shep() {
+        unsigned long long int key = base_addr + 0x1782300;
+        unsigned long long int ptr1 = read_bytes(key, 8);
+        unsigned long long int ptr2 = read_bytes(ptr1 + 0x0, 8);
+        unsigned long long int ptr3 = read_bytes(ptr2 + 0x40, 8);
+        std::cout << "PTR3 test: " << ptr3 << std::endl; // At least we know ptr3 is correct.
+        ABioPawn* Shep = reinterpret_cast<ABioPawn*>(ptr3); // Not pulling the class out of memory... yet
+        std::cout << "IsA test: " << Shep->IsA(ABioPawn::StaticClass()) << std::endl; // Crashes here.
+        //std::cout << "Test: " << Shep.WalkSpeed << std::endl;
+        return Shep;
+    }
     float* shep_coords() {
         float retval[3];
         unsigned long long int key = base_addr + 0x1782300;
@@ -185,6 +232,10 @@ public:
     }
     bool user_control() {
         unsigned long long int key = base_addr + 0x167EE30;
-        return (read_bytes(key, 8) == 7);
+        int var_check = read_bytes(key, 1);
+        // std::cout << var_check << " | " << read_bytes(key, 1) << std::endl;
+        std::cout << var_check << std::endl;
+        if (var_check == 7) return true;
+        return false;
     }
 };
