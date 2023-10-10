@@ -23,6 +23,7 @@ int main()
         // Initialize logging??
         // Connect to memory
         memory_start();
+        memory.connect_shep();
 
         // Initialize controller
         xbox.connect();
